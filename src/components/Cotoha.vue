@@ -2,12 +2,13 @@
   <div id="cotoha">
     <p>{{ text }}</p>
     <p>感情分析結果 : {{ emotions }}</p>
-    <input id="sentiment" type="text" :value="text" @change="sentiment($event)">
+    <p>文タイプ分析結果 : {{ sentenceTypes }}</p>
+    <textarea id="sentiment" :value="text" @change="inputChanged($event)"></textarea>
   </div>
 </template>
 
 <script>
-'use strict';
+'use strict'
 import axios from 'axios'
 import config from '@/env/config'
 
@@ -29,7 +30,6 @@ export default {
     }
     axios.post(config.TOKEN_URL, data)
       .then(res => {
-        console.log(res.data)
         this.token = res.data['access_token']
       })
       .catch(error => {
@@ -37,13 +37,17 @@ export default {
       })
   },
   methods: {
-    sentiment (e) {
+    inputChanged (e) {
+      this.text = e.target.value
       const headers = {
         'content-type': 'application/json',
         Authorization: `Bearer ${this.token}`
       }
-      const data = { sentence: e.target.value }
-      this.text = e.target.value
+      const data = { sentence: this.text }
+      this.sentiment(headers, data)
+      this.sentenceType(headers, data)
+    },
+    sentiment (headers, data) {
       axios({
         method: 'POST',
         headers: headers,
@@ -56,11 +60,28 @@ export default {
         .catch(error => {
           console.log(error)
         })
+    },
+    sentenceType (headers, data) {
+      axios({
+        method: 'POST',
+        headers: headers,
+        url: `${config.BASE_URL}/v1/sentence_type`,
+        data: data
+      })
+        .then(res => {
+          this.sentenceTypes = res.data['result']['dialog_act']
+        })
+        .catch(error => {
+          console.log(error)
+        })
     }
   }
 }
 </script>
 
 <style scoped>
-
+  textarea {
+    width: 500px;
+    height: 100px;
+  }
 </style>
